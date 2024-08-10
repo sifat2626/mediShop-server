@@ -21,4 +21,13 @@ router.get('/admin-dashboard', authenticateUser, authorizeRoles('admin', 'super 
     res.status(200).json({ message: 'Welcome to the admin dashboard!' });
 });
 
+// User Management Routes (for Admin)
+router.route('/')
+    .get(authenticateUser, authorizeRoles('admin'), userController.getUsers); // Get all users
+
+router.route('/:id')
+    .get(authenticateUser, authorizeRoles('admin'), userController.getUserById) // Get a single user by ID
+    .put(authenticateUser, authorizeRoles('admin'), userController.updateUser) // Update a user
+    .delete(authenticateUser, authorizeRoles('admin'), userController.deleteUser); // Delete a user
+
 module.exports = router;

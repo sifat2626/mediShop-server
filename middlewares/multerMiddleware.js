@@ -29,4 +29,4 @@ const upload = multer({
     }
 });
 
-module.exports = upload;  // Export directly
+module.exports = upload; // Export the upload object
