@@ -95,16 +95,22 @@ exports.verifyOTP = async (req, res) => {
 };
 
 // Login user
+
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        // Find the user by email
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
+        // Use the instance method to compare passwords
         const isMatch = await user.comparePassword(password);
+        console.log("Entered Password:", password);
+        console.log("Stored Hashed Password:", user.password);
+        console.log("Password Match Result:", isMatch);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
@@ -114,22 +120,41 @@ exports.login = async (req, res) => {
         }
 
         // Generate JWT tokens
-        const accessToken = jwt.sign({ id: user._id, roles: user.roles }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        const refreshToken = jwt.sign({ id: user._id, roles: user.roles }, process.env.JWT_REFRESH_SECRET, { expiresIn: '1d' });
+        const accessToken = jwt.sign(
+            { id: user._id, roles: user.roles },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+        const refreshToken = jwt.sign(
+            { id: user._id, roles: user.roles },
+            process.env.JWT_REFRESH_SECRET,
+            { expiresIn: '1d' }
+        );
 
         // Save refresh token in the database
         user.refreshToken = refreshToken;
         await user.save();
 
         // Send tokens as cookies
-        res.cookie('accessToken', accessToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 60 * 60 * 1000 }); // 1 hour
-        res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000 }); // 1 day
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 60 * 60 * 1000, // 1 hour
+        });
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 24 * 60 * 60 * 1000, // 1 day
+        });
 
         res.status(200).json({ message: 'Login successful', accessToken });
     } catch (error) {
+        console.error('Login error:', error);
         res.status(500).json({ message: 'Server error', error });
     }
 };
+
+
 
 // Refresh JWT token
 exports.refreshToken = async (req, res) => {
