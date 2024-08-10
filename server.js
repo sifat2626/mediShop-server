@@ -18,27 +18,32 @@ app.use(cors({
     credentials: true,
 }));
 app.use(morgan("dev"));
-app.use(express.json());
+app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(helmet());
-app.use(cookieParser())
+app.use(cookieParser());
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // routes middleware
-// readdirSync("./routes").map((r) =>
-//     app.use("/api/v1", require(`./routes/${r}`))
-// );
+readdirSync("./routes").map((r) =>
+    app.use("/api/v1", require(`./routes/${r}`))
+);
 
 // server
 const port = process.env.PORT || 8000;
 
-
-
 // Connect to DB and start server
 mongoose
-    .connect(process.env.DATABASE)
+    .connect(process.env.DATABASE, )
     .then(() => {
         app.listen(port, () => {
             console.log(`Server Running on port ${port}`);
         });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => console.log('DB Connection Error:', err));
+
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something went wrong!');
+});
